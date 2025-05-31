@@ -1,6 +1,19 @@
-opencv-python~=4.11.0.86
+# Core libraries
+opencv-python-headless~=4.11.0.86  # Headless version is more compatible with CUDA
+opencv-contrib-python~=4.11.0.86  # For additional OpenCV modules with CUDA support
 numpy~=1.26.4
+torch>=2.0.0  # PyTorch with CUDA support (will use CUDA if available)
+torchvision>=0.15.0  # PyTorch vision utilities
+
+# Computer vision and ML libraries
 mediapipe~=0.10.21
-ultralytics~=8.3.146
+ultralytics~=8.3.146  # YOLOv8
+
+# Communication
 python-osc~=1.9.3
 requests~=2.32.3
+
+# Optional GPU acceleration
+# Install these manually if needed:
+# cupy-cuda11x  # For NumPy GPU acceleration (replace 11x with your CUDA version)
+# onnxruntime-gpu  # For ONNX GPU acceleration

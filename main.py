@@ -15,17 +15,26 @@ from utils.helpers import draw_text
 def main():
     import torch
 
-    # Check CUDA availability
-    print(f"CUDA is available: {torch.cuda.is_available()}")
+    # Initialize settings first to get GPU configuration
+    settings = Settings()
+
+    # Check CUDA availability and log detailed GPU information
+    logger.info(f"CUDA is available: {torch.cuda.is_available()}")
+    logger.info(f"Using device: {settings.DEVICE}")
+
     if torch.cuda.is_available():
-        print(f"Current CUDA device: {torch.cuda.get_device_name()}")
+        logger.info(f"GPU: {torch.cuda.get_device_name()}")
+        logger.info(f"GPU Memory: {torch.cuda.get_device_properties(0).total_memory / 1024 / 1024 / 1024:.2f} GB")
+        if settings.DEVICE == "cpu":
+            logger.warning("GPU is available but not being used (USE_GPU is set to False)")
+    else:
+        logger.warning("CUDA is not available, using CPU only")
 
     # Check OpenCV CUDA support
-    print(f"OpenCV CUDA support: {cv2.cuda.getCudaEnabledDeviceCount() > 0}")
-    logger.info("Starting 3DMesh application")
+    opencv_cuda = cv2.cuda.getCudaEnabledDeviceCount() > 0
+    logger.info(f"OpenCV CUDA support: {opencv_cuda}")
 
-    # Initialize components
-    settings = Settings()
+    logger.info("Starting 3DMesh application")
     logger.info(f"Debug mode: {settings.DEBUG_MODE}")
 
     # Check for API key

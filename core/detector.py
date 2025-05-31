@@ -65,7 +65,10 @@ class EntityDetector:
             min_detection_confidence=settings.MP_FACE_DETECTION_CONFIDENCE,
             min_tracking_confidence=settings.MP_FACE_TRACKING_CONFIDENCE,
             refine_landmarks=True)
+        # Initialize YOLO with the device setting
         self.animal_detector = YOLO(settings.YOLO_MODEL_PATH)
+        # Set the model to use the configured device (GPU or CPU)
+        self.animal_detector.to(settings.DEVICE)
         self.mp_drawing = mp.solutions.drawing_utils
         self.mp_drawing_styles = mp.solutions.drawing_styles
 

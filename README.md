@@ -257,6 +257,59 @@ The system supports multiple avatars simultaneously, each with its own animation
 - Multi-entity support
 - Visual effects and scene management
 
+## GPU Acceleration
+
+The project now includes comprehensive GPU acceleration support to improve performance when an NVIDIA GPU is available.
+
+### GPU-Accelerated Components
+
+- **YOLO Object Detection**: Animal detection using YOLOv8 is automatically accelerated when a compatible GPU is available
+- **Frame Preprocessing**: Camera frames are preprocessed on the GPU for faster processing
+- **PyTorch Operations**: All PyTorch-based operations use GPU acceleration when available
+
+### Configuring GPU Usage
+
+GPU acceleration can be configured in `config/settings.py`:
+
+```python
+# GPU/CUDA Settings
+USE_GPU = True  # Set to False to force CPU usage even if GPU is available
+```
+
+The system automatically detects CUDA availability and configures components accordingly. You can disable GPU acceleration by setting `USE_GPU = False` in the settings file.
+
+### Verifying GPU Usage
+
+To verify that GPU acceleration is working correctly:
+
+```
+python test_gpu.py
+```
+
+This script will test all GPU-accelerated components and log detailed information about:
+- CUDA availability
+- GPU device name and memory
+- OpenCV CUDA support
+- Camera GPU acceleration
+- YOLO model GPU acceleration
+
+You can also see GPU information when running the main application:
+
+```
+python main.py
+```
+
+The application will log GPU information at startup, including:
+- CUDA availability
+- GPU device name and memory
+- Whether components are using GPU acceleration
+
+### GPU Requirements
+
+- NVIDIA GPU with CUDA support
+- Up-to-date NVIDIA drivers
+- CUDA Toolkit 11.0 or newer (installed automatically with PyTorch)
+
 ## Troubleshooting
 
 ### Environment and Installation Issues

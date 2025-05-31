@@ -1,8 +1,13 @@
 import os
 from pathlib import Path
+import torch
 
 
 class Settings:
+    # GPU/CUDA Settings
+    USE_GPU = True  # Set to False to force CPU usage even if GPU is available
+    DEVICE = "cuda" if torch.cuda.is_available() and USE_GPU else "cpu"
+
     # Camera
     CAMERA_INDEX = 0
     CAMERA_WIDTH = 1920
