@@ -13,6 +13,15 @@ from utils.helpers import draw_text
 
 @track_performance
 def main():
+    import torch
+
+    # Check CUDA availability
+    print(f"CUDA is available: {torch.cuda.is_available()}")
+    if torch.cuda.is_available():
+        print(f"Current CUDA device: {torch.cuda.get_device_name()}")
+
+    # Check OpenCV CUDA support
+    print(f"OpenCV CUDA support: {cv2.cuda.getCudaEnabledDeviceCount() > 0}")
     logger.info("Starting 3DMesh application")
 
     # Initialize components

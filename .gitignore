@@ -53,3 +53,17 @@ Thumbs.db
 
 yolov8x.pt
 td_project/
+
+# CUDA
+*.i
+*.ii
+*.gpu
+*.ptx
+*.cubin
+*.fatbin
+*.cudafe1.c
+*.cudafe1.cpp
+*.cudafe1.h
+*.cudafe2.c
+*.cudafe2.cpp
+*.cudafe2.h
