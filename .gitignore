@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+/venv/
+env/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.project
+.pydevproject
+.settings/
+
+# Logs
+logs/
+*.log
+replay_pid*.log
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Project specific
+# *.pt  # Uncomment if you don't want to track model files
+# td_project/*.bak  # Uncomment if you want to ignore TouchDesigner backups
+
+# Environment variables
+.env
+.env.local
+
+yolov8x.pt
+td_project/

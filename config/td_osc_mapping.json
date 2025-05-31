@@ -1,0 +1,91 @@
+{
+  "avatar": {
+    "status": "/avatar/{index}/status",
+    "url": "/avatar/{index}/url",
+    "type": "/avatar/{index}/type",
+    "species": "/avatar/{index}/species",
+    "features": {
+      "body": "/avatar/{index}/body",
+      "face": {
+        "emotions": "/avatar/{index}/face/emotions",
+        "landmarks": "/avatar/{index}/face/landmarks"
+      }
+    },
+    "animation": {
+      "motion_detected": "/avatar/{index}/animation/motion_detected",
+      "joint_rotations": {
+        "head": {
+          "x": "/avatar/{index}/animation/joints/head/x",
+          "y": "/avatar/{index}/animation/joints/head/y",
+          "z": "/avatar/{index}/animation/joints/head/z"
+        },
+        "torso": {
+          "x": "/avatar/{index}/animation/joints/torso/x",
+          "y": "/avatar/{index}/animation/joints/torso/y",
+          "z": "/avatar/{index}/animation/joints/torso/z"
+        },
+        "left_arm": {
+          "x": "/avatar/{index}/animation/joints/left_arm/x",
+          "y": "/avatar/{index}/animation/joints/left_arm/y",
+          "z": "/avatar/{index}/animation/joints/left_arm/z"
+        },
+        "right_arm": {
+          "x": "/avatar/{index}/animation/joints/right_arm/x",
+          "y": "/avatar/{index}/animation/joints/right_arm/y",
+          "z": "/avatar/{index}/animation/joints/right_arm/z"
+        },
+        "left_leg": {
+          "x": "/avatar/{index}/animation/joints/left_leg/x",
+          "y": "/avatar/{index}/animation/joints/left_leg/y",
+          "z": "/avatar/{index}/animation/joints/left_leg/z"
+        },
+        "right_leg": {
+          "x": "/avatar/{index}/animation/joints/right_leg/x",
+          "y": "/avatar/{index}/animation/joints/right_leg/y",
+          "z": "/avatar/{index}/animation/joints/right_leg/z"
+        },
+        "body": {
+          "x": "/avatar/{index}/animation/joints/body/x",
+          "y": "/avatar/{index}/animation/joints/body/y",
+          "z": "/avatar/{index}/animation/joints/body/z"
+        },
+        "tail": {
+          "x": "/avatar/{index}/animation/joints/tail/x",
+          "y": "/avatar/{index}/animation/joints/tail/y",
+          "z": "/avatar/{index}/animation/joints/tail/z"
+        },
+        "front_legs": {
+          "x": "/avatar/{index}/animation/joints/front_legs/x",
+          "y": "/avatar/{index}/animation/joints/front_legs/y",
+          "z": "/avatar/{index}/animation/joints/front_legs/z"
+        },
+        "back_legs": {
+          "x": "/avatar/{index}/animation/joints/back_legs/x",
+          "y": "/avatar/{index}/animation/joints/back_legs/y",
+          "z": "/avatar/{index}/animation/joints/back_legs/z"
+        },
+        "wings": {
+          "x": "/avatar/{index}/animation/joints/wings/x",
+          "y": "/avatar/{index}/animation/joints/wings/y",
+          "z": "/avatar/{index}/animation/joints/wings/z"
+        }
+      },
+      "facial_expressions": {
+        "smile": "/avatar/{index}/animation/face/smile",
+        "eyebrow_raise": "/avatar/{index}/animation/face/eyebrow_raise",
+        "eye_open": "/avatar/{index}/animation/face/eye_open",
+        "mouth_open": "/avatar/{index}/animation/face/mouth_open",
+        "jaw_clench": "/avatar/{index}/animation/face/jaw_clench"
+      },
+      "body_motion": {
+        "velocity": "/avatar/{index}/animation/motion/velocity",
+        "acceleration": "/avatar/{index}/animation/motion/acceleration"
+      }
+    }
+  },
+  "scene": {
+    "camera": "/scene/camera",
+    "lighting": "/scene/lighting",
+    "entities_count": "/scene/entities_count"
+  }
+}

@@ -1,0 +1,6 @@
+opencv-python~=4.11.0.86
+numpy~=1.26.4
+mediapipe~=0.10.21
+ultralytics~=8.3.146
+python-osc~=1.9.3
+requests~=2.32.3
