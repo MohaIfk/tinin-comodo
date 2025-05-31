@@ -720,7 +720,19 @@ class EntityDetector:
         return True
 
     def _process_humans(self, rgb_frame, yolo_results) -> list[Entity]:
-        """Process YOLOv8 results to extract and process human entities"""
+        """
+        Process YOLOv8 results to extract and process human entities.
+
+        This method:
+        1. Detects humans using YOLOv8
+        2. Crops the region of interest for each human
+        3. Processes each cropped region with MediaPipe for pose and face detection
+        4. Calculates the normalized coordinates of the cropped region
+        5. Passes the MediaPipe results and normalized coordinates to _process_human
+
+        The number of humans detected is limited by MP_MAX_NUM_FACES in settings.py.
+        The face coordinates are correctly transformed from the cropped region to the original frame.
+        """
         entities = []
 
         # Human class ID in YOLOv8 (COCO dataset)
@@ -777,8 +789,14 @@ class EntityDetector:
                 if not pose_results.pose_landmarks:
                     continue
 
-                # Process human with MediaPipe results and original coordinates
-                human_entity = self._process_human(pose_results, face_results, (x1, y1, x2, y2))
+                # Calculate normalized coordinates of the cropped region relative to the original frame
+                x1_norm = x1_px / w
+                y1_norm = y1_px / h
+                x2_norm = x2_px / w
+                y2_norm = y2_px / h
+
+                # Process human with MediaPipe results and normalized coordinates of the cropped region
+                human_entity = self._process_human(pose_results, face_results, (x1_norm, y1_norm, x2_norm, y2_norm))
 
                 # Add to entities list
                 entities.append(human_entity)

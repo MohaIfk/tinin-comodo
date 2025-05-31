@@ -18,7 +18,7 @@ class Settings:
     MP_DETECTION_CONFIDENCE = 0.7
     MP_FACE_DETECTION_CONFIDENCE = 0.7
     MP_FACE_TRACKING_CONFIDENCE = 0.5
-    MP_MAX_NUM_FACES = 10  # Increased to support multiple people
+    MP_MAX_NUM_FACES = 3  # Limited to support 2-3 people
     YOLO_MODEL_PATH = "yolov8s.pt"
 
     # Entity validation
