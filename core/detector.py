@@ -76,21 +76,17 @@ class EntityDetector:
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         entities = []
 
-        # Human detection
-        pose_results = self.pose.process(rgb_frame)
-        face_results = self.face.process(rgb_frame)
+        # Use YOLO to detect all entities (humans and animals)
+        yolo_results = self.animal_detector(rgb_frame)
 
-        if pose_results.pose_landmarks:
-            human_entity = self._process_human(pose_results, face_results)
-            # Validate human entity
+        # Process humans
+        human_entities = self._process_humans(rgb_frame, yolo_results)
+        for human_entity in human_entities:
             if self._validate_entity(human_entity):
                 entities.append(human_entity)
 
-        # Animal detection
-        animal_results = self.animal_detector(rgb_frame)
-        animal_entities = self._process_animals(animal_results)
-
-        # Validate animal entities
+        # Process animals
+        animal_entities = self._process_animals(yolo_results)
         for animal_entity in animal_entities:
             if self._validate_entity(animal_entity):
                 entities.append(animal_entity)
@@ -277,8 +273,16 @@ class EntityDetector:
         if hasattr(entity, '_face_results'):
             self._draw_face_landmarks(frame, entity)
 
-    def _process_human(self, pose_results, face_results) -> Entity:
-        """Process human detection results and extract key features"""
+    def _process_human(self, pose_results, face_results, roi_coords=None) -> Entity:
+        """
+        Process human detection results and extract key features
+
+        Args:
+            pose_results: MediaPipe pose detection results
+            face_results: MediaPipe face detection results
+            roi_coords: Optional tuple (x1, y1, x2, y2) of the region of interest in normalized coordinates
+                        If provided, landmarks will be adjusted to the original frame coordinates
+        """
         # Extract pose keypoints
         pose_landmarks = pose_results.pose_landmarks.landmark
 
@@ -287,12 +291,23 @@ class EntityDetector:
 
         # Map all pose landmarks to the keypoints dictionary
         for landmark_name, landmark_value in mp.solutions.pose.PoseLandmark.__members__.items():
-            body_keypoints[landmark_name.lower()] = [
-                pose_landmarks[landmark_value].x,
-                pose_landmarks[landmark_value].y,
-                pose_landmarks[landmark_value].z,
-                pose_landmarks[landmark_value].visibility
-            ]
+            # Get the landmark coordinates
+            x = pose_landmarks[landmark_value].x
+            y = pose_landmarks[landmark_value].y
+            z = pose_landmarks[landmark_value].z
+            visibility = pose_landmarks[landmark_value].visibility
+
+            # Adjust coordinates if ROI is provided
+            if roi_coords:
+                x1, y1, x2, y2 = roi_coords
+                roi_width = x2 - x1
+                roi_height = y2 - y1
+
+                # Scale and translate coordinates to original frame
+                x = x1 + (x * roi_width)
+                y = y1 + (y * roi_height)
+
+            body_keypoints[landmark_name.lower()] = [x, y, z, visibility]
 
         keypoints = {
             'body': body_keypoints,
@@ -301,6 +316,7 @@ class EntityDetector:
 
         # Extract facial landmarks if available
         if face_results.multi_face_landmarks:
+            # Use the first face for now (we'll handle multiple faces later)
             face_landmarks = face_results.multi_face_landmarks[0].landmark
             face_keypoints = {}
 
@@ -312,11 +328,23 @@ class EntityDetector:
                 eye_points = {}
                 for j, point in enumerate(eye_set):
                     idx = point[0]  # Get the landmark index
-                    eye_points[f'point_{j}'] = [
-                        face_landmarks[idx].x,
-                        face_landmarks[idx].y,
-                        face_landmarks[idx].z
-                    ]
+
+                    # Get the landmark coordinates
+                    x = face_landmarks[idx].x
+                    y = face_landmarks[idx].y
+                    z = face_landmarks[idx].z
+
+                    # Adjust coordinates if ROI is provided
+                    if roi_coords:
+                        x1, y1, x2, y2 = roi_coords
+                        roi_width = x2 - x1
+                        roi_height = y2 - y1
+
+                        # Scale and translate coordinates to original frame
+                        x = x1 + (x * roi_width)
+                        y = y1 + (y * roi_height)
+
+                    eye_points[f'point_{j}'] = [x, y, z]
                 face_keypoints[eye_name] = eye_points
 
             # Eyebrows
@@ -326,33 +354,69 @@ class EntityDetector:
                 eyebrow_points = {}
                 for j, point in enumerate(eyebrow_set):
                     idx = point[0]  # Get the landmark index
-                    eyebrow_points[f'point_{j}'] = [
-                        face_landmarks[idx].x,
-                        face_landmarks[idx].y,
-                        face_landmarks[idx].z
-                    ]
+
+                    # Get the landmark coordinates
+                    x = face_landmarks[idx].x
+                    y = face_landmarks[idx].y
+                    z = face_landmarks[idx].z
+
+                    # Adjust coordinates if ROI is provided
+                    if roi_coords:
+                        x1, y1, x2, y2 = roi_coords
+                        roi_width = x2 - x1
+                        roi_height = y2 - y1
+
+                        # Scale and translate coordinates to original frame
+                        x = x1 + (x * roi_width)
+                        y = y1 + (y * roi_height)
+
+                    eyebrow_points[f'point_{j}'] = [x, y, z]
                 face_keypoints[eyebrow_name] = eyebrow_points
 
             # Lips
             lips_points = {}
             for j, point in enumerate(mp.solutions.face_mesh.FACEMESH_LIPS):
                 idx = point[0]  # Get the landmark index
-                lips_points[f'point_{j}'] = [
-                    face_landmarks[idx].x,
-                    face_landmarks[idx].y,
-                    face_landmarks[idx].z
-                ]
+
+                # Get the landmark coordinates
+                x = face_landmarks[idx].x
+                y = face_landmarks[idx].y
+                z = face_landmarks[idx].z
+
+                # Adjust coordinates if ROI is provided
+                if roi_coords:
+                    x1, y1, x2, y2 = roi_coords
+                    roi_width = x2 - x1
+                    roi_height = y2 - y1
+
+                    # Scale and translate coordinates to original frame
+                    x = x1 + (x * roi_width)
+                    y = y1 + (y * roi_height)
+
+                lips_points[f'point_{j}'] = [x, y, z]
             face_keypoints['lips'] = lips_points
 
             # Nose
             nose_points = {}
             for j, point in enumerate(mp.solutions.face_mesh.FACEMESH_NOSE):
                 idx = point[0]  # Get the landmark index
-                nose_points[f'point_{j}'] = [
-                    face_landmarks[idx].x,
-                    face_landmarks[idx].y,
-                    face_landmarks[idx].z
-                ]
+
+                # Get the landmark coordinates
+                x = face_landmarks[idx].x
+                y = face_landmarks[idx].y
+                z = face_landmarks[idx].z
+
+                # Adjust coordinates if ROI is provided
+                if roi_coords:
+                    x1, y1, x2, y2 = roi_coords
+                    roi_width = x2 - x1
+                    roi_height = y2 - y1
+
+                    # Scale and translate coordinates to original frame
+                    x = x1 + (x * roi_width)
+                    y = y1 + (y * roi_height)
+
+                nose_points[f'point_{j}'] = [x, y, z]
             face_keypoints['nose'] = nose_points
 
             keypoints['face'] = face_keypoints
@@ -360,8 +424,11 @@ class EntityDetector:
         # Estimate emotions (simplified example)
         emotions = self._estimate_emotions(face_landmarks if face_results.multi_face_landmarks else None)
 
-        # Calculate bounding box
-        bbox = self._calculate_bbox(pose_landmarks)
+        # Use provided ROI coordinates as bounding box if available, otherwise calculate from landmarks
+        if roi_coords:
+            bbox = roi_coords
+        else:
+            bbox = self._calculate_bbox(pose_landmarks)
 
         # Create the entity
         entity = Entity(
@@ -558,6 +625,67 @@ class EntityDetector:
             return False
 
         return True
+
+    def _process_humans(self, rgb_frame, yolo_results) -> list[Entity]:
+        """Process YOLOv8 results to extract and process human entities"""
+        entities = []
+
+        # Human class ID in YOLOv8 (COCO dataset)
+        HUMAN_CLASS_ID = 0
+
+        # Get original frame dimensions
+        h, w = rgb_frame.shape[:2]
+
+        # Process each detection
+        for result in yolo_results:
+            for box in result.boxes:
+                class_id = int(box.cls)
+
+                # Skip if not human
+                if class_id != HUMAN_CLASS_ID:
+                    continue
+
+                # Get bounding box coordinates (normalized to 0-1)
+                x1, y1, x2, y2 = box.xyxyn[0].tolist()
+                conf = float(box.conf)
+
+                # Only process high-confidence detections
+                if conf < 0.5:
+                    continue
+
+                # Convert normalized coordinates to pixel coordinates
+                x1_px, y1_px = int(x1 * w), int(y1 * h)
+                x2_px, y2_px = int(x2 * w), int(y2 * h)
+
+                # Add padding to ensure the whole person is captured
+                padding = 20
+                x1_px = max(0, x1_px - padding)
+                y1_px = max(0, y1_px - padding)
+                x2_px = min(w, x2_px + padding)
+                y2_px = min(h, y2_px + padding)
+
+                # Crop the region of interest
+                human_roi = rgb_frame[y1_px:y2_px, x1_px:x2_px]
+
+                # Skip if ROI is empty
+                if human_roi.size == 0:
+                    continue
+
+                # Process with MediaPipe
+                pose_results = self.pose.process(human_roi)
+                face_results = self.face.process(human_roi)
+
+                # Skip if no pose landmarks detected
+                if not pose_results.pose_landmarks:
+                    continue
+
+                # Process human with MediaPipe results and original coordinates
+                human_entity = self._process_human(pose_results, face_results, (x1, y1, x2, y2))
+
+                # Add to entities list
+                entities.append(human_entity)
+
+        return entities
 
     def _process_animals(self, yolo_results) -> list[Entity]:
         """Process YOLOv8 results to extract animal entities"""
