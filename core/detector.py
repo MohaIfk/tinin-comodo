@@ -73,6 +73,22 @@ class EntityDetector:
         self.mp_drawing_styles = mp.solutions.drawing_styles
 
     def process_frame(self, frame) -> List[Entity]:
+        """
+        Process a frame to detect and extract entities (humans and animals).
+
+        This method uses YOLO for initial detection of humans and animals,
+        then processes each detection with MediaPipe for detailed pose and face analysis.
+        The implementation addresses several issues:
+        1. False positives are reduced by using a higher confidence threshold
+        2. Multiple faces on a single person are handled by selecting the best face
+        3. Face detection is performed only within the cropped region of each detected person
+
+        Args:
+            frame: Input BGR frame
+
+        Returns:
+            List[Entity]: List of detected entities
+        """
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         entities = []
 
@@ -316,8 +332,9 @@ class EntityDetector:
 
         # Extract facial landmarks if available
         if face_results.multi_face_landmarks:
-            # Use the first face for now (we'll handle multiple faces later)
-            face_landmarks = face_results.multi_face_landmarks[0].landmark
+            # Select the best face if multiple faces are detected
+            best_face_idx = self._select_best_face(face_results.multi_face_landmarks)
+            face_landmarks = face_results.multi_face_landmarks[best_face_idx].landmark
             face_keypoints = {}
 
             # Extract key facial features
@@ -442,8 +459,14 @@ class EntityDetector:
 
         # Store the original MediaPipe results for drawing
         setattr(entity, '_pose_results', pose_results)
+
+        # Store only the selected face for drawing
         if face_results.multi_face_landmarks:
-            setattr(entity, '_face_results', face_results)
+            # Create a copy of face_results with only the selected face
+            import copy
+            selected_face_results = copy.deepcopy(face_results)
+            selected_face_results.multi_face_landmarks = [face_results.multi_face_landmarks[best_face_idx]]
+            setattr(entity, '_face_results', selected_face_results)
 
         return entity
 
@@ -593,6 +616,76 @@ class EntityDetector:
         self._id_counter += 1
         return self._id_counter
 
+    def _select_best_face(self, face_landmarks_list):
+        """
+        Select the best face from multiple detected faces.
+
+        Args:
+            face_landmarks_list: List of face landmarks from MediaPipe
+
+        Returns:
+            int: Index of the best face in the list
+        """
+        # If only one face is detected, return its index
+        if len(face_landmarks_list) == 1:
+            return 0
+
+        # Calculate the center and size of each face
+        face_centers = []
+        face_sizes = []
+        for face_landmarks in face_landmarks_list:
+            # Get all x and y coordinates
+            x_coords = [landmark.x for landmark in face_landmarks.landmark]
+            y_coords = [landmark.y for landmark in face_landmarks.landmark]
+
+            # Calculate center
+            center_x = sum(x_coords) / len(x_coords)
+            center_y = sum(y_coords) / len(y_coords)
+            face_centers.append((center_x, center_y))
+
+            # Calculate face size (width and height)
+            min_x, max_x = min(x_coords), max(x_coords)
+            min_y, max_y = min(y_coords), max(y_coords)
+            width = max_x - min_x
+            height = max_y - min_y
+            face_sizes.append((width, height))
+
+        # The center of the ROI is (0.5, 0.5) in normalized coordinates
+        roi_center = (0.5, 0.5)
+
+        # Define the valid region (slightly smaller than the full ROI to ensure face is fully inside)
+        valid_region = (0.1, 0.1, 0.9, 0.9)  # (x1, y1, x2, y2)
+
+        # Find faces that are within the valid region
+        valid_faces = []
+        for i, (center_x, center_y) in enumerate(face_centers):
+            if (valid_region[0] <= center_x <= valid_region[2] and 
+                valid_region[1] <= center_y <= valid_region[3]):
+                valid_faces.append(i)
+
+        # If there are valid faces, select the one closest to the center
+        if valid_faces:
+            # Calculate distance from each valid face center to ROI center
+            distances = []
+            for i in valid_faces:
+                center_x, center_y = face_centers[i]
+                distance = ((center_x - roi_center[0]) ** 2 + (center_y - roi_center[1]) ** 2) ** 0.5
+                distances.append((i, distance))
+
+            # Sort by distance and return the index of the closest face
+            distances.sort(key=lambda x: x[1])
+            return distances[0][0]
+        else:
+            # If no faces are within the valid region, select the one closest to the center
+            distances = []
+            for i, (center_x, center_y) in enumerate(face_centers):
+                distance = ((center_x - roi_center[0]) ** 2 + (center_y - roi_center[1]) ** 2) ** 0.5
+                distances.append((i, distance))
+
+            # Sort by distance and return the index of the closest face
+            distances.sort(key=lambda x: x[1])
+            return distances[0][0]
+
     def _validate_entity(self, entity) -> bool:
         """
         Validate entity based on size and position
@@ -649,20 +742,25 @@ class EntityDetector:
                 x1, y1, x2, y2 = box.xyxyn[0].tolist()
                 conf = float(box.conf)
 
-                # Only process high-confidence detections
-                if conf < 0.5:
+                # Only process high-confidence detections (increased threshold to reduce false positives)
+                if conf < 0.65:
                     continue
 
                 # Convert normalized coordinates to pixel coordinates
                 x1_px, y1_px = int(x1 * w), int(y1 * h)
                 x2_px, y2_px = int(x2 * w), int(y2 * h)
 
+                # Calculate padding proportional to the size of the detection
+                width_px = x2_px - x1_px
+                height_px = y2_px - y1_px
+                padding_x = int(width_px * 0.1)  # 10% of width
+                padding_y = int(height_px * 0.1)  # 10% of height
+
                 # Add padding to ensure the whole person is captured
-                padding = 20
-                x1_px = max(0, x1_px - padding)
-                y1_px = max(0, y1_px - padding)
-                x2_px = min(w, x2_px + padding)
-                y2_px = min(h, y2_px + padding)
+                x1_px = max(0, x1_px - padding_x)
+                y1_px = max(0, y1_px - padding_y)
+                x2_px = min(w, x2_px + padding_x)
+                y2_px = min(h, y2_px + padding_y)
 
                 # Crop the region of interest
                 human_roi = rgb_frame[y1_px:y2_px, x1_px:x2_px]
